@@ -97,61 +97,72 @@ export const draftJsStuff = (
       const draft = value as RawDraftContentState
       draft.blocks.forEach(block => {
         let currentText = block.text
-        ;[...block.entityRanges].reverse().forEach(range => {
-          let replacementText = ''
-          if (draft.entityMap && draft.entityMap[range.key]) {
-            if (draft.entityMap[range.key].data) {
-              const entityData = draft.entityMap[range.key].data as EntityData[]
-              const value = entityData.reduce((acc, d) => {
-                switch (d.type) {
-                }
-              }, {} as any)
+          ;[...block.entityRanges].reverse().forEach(range => {
+            let replacementText = ''
+            if (draft.entityMap && draft.entityMap[range.key]) {
+              if (draft.entityMap[range.key].data) {
+                const entityData = draft.entityMap[range.key].data as EntityData[]
+                const value = entityData.reduce((acc, d) => {
+                  switch (d.type) {
+                  }
+                }, {} as any)
 
-              switch (entityData[0].type) {
-                case 'ASSET':
-                  // save the asset into the assets folder
-                  break;
-                case 'INPUT':
-                  const [parts, dataPath] = entityData[
-                    entityData.length - 1
-                  ].value.split('+') as string[]
-                  const bits = parts.split('.')
-                  let currentComponent: StructuredComponent | null = null
-                  bits.forEach(bit => {
-                    if (!currentComponent) {
-                      const comp = rootComponents.find(p => p._id.toString() === bit)
-                      if (comp) {
-                        currentComponent = comp
-                      }
-                    } else {
-                      if (currentComponent.children) {
-                        const comp = currentComponent.children.find(
-                          p => p._id.toString() === bit
-                        )
+                switch (entityData[0].type) {
+                  case 'ASSET':
+                    // save the asset into the assets folder
+                    break;
+                  case 'INPUT':
+                    const [parts, dataPath] = entityData[
+                      entityData.length - 1
+                    ].value.split('+') as string[]
+                    const bits = parts.split('.')
+                    let currentComponent: StructuredComponent | null = null
+                    bits.forEach(bit => {
+                      if (!currentComponent) {
+                        var comp: any;
+                        rootComponents.forEach(element => {
+                          element.children.forEach(grandChildElement => {
+                            if (grandChildElement._id.toString() === bit) {
+                              comp = grandChildElement;
+                            }
+                            grandChildElement.children.forEach(xx => {
+                              if (xx._id.toString() === bit) {
+                                comp = xx;
+                              }
+                            })
+                          })
+                        });
                         if (comp) {
-                          currentComponent = comp as StructuredComponent
+                          currentComponent = comp
+                        }
+                      } else {
+                        if (currentComponent.children) {
+                          const comp = currentComponent.children.find(
+                            p => p._id.toString() === bit
+                          )
+                          if (comp) {
+                            currentComponent = comp as StructuredComponent
+                          }
                         }
                       }
+                    })
+                    if (currentComponent !== null) {
+                      //replacementText = `\${${(currentComponent as Component).name}${dataPath ? dataPath : ''}}`
+                      replacementText = (currentComponent as Component).name + (dataPath ? dataPath : '')
                     }
-                  })
-                  if (currentComponent !== null) {
-                    replacementText = `\${${
-                      (currentComponent as Component).name
-                    }${dataPath ? dataPath : ''}}`
-                  }
-                  break
-                case 'LOCAL_DATA':
-                  if (entityData[0].value === 'CurrentUser') {
-                    replacementText = `\${meData?.me?._id}`
-                  }
-                  break
-                case 'SERVER_DATA':
-                  replacementText = entityData[0].value
-                  const entityParts = draft.entityMap[
-                    range.key
+                    break
+                  case 'LOCAL_DATA':
+                    if (entityData[0].value === 'CurrentUser') {
+                      replacementText = `\${meData?.me?._id}`
+                    }
+                    break
+                  case 'SERVER_DATA':
+                    replacementText = entityData[0].value
+                    const entityParts = draft.entityMap[
+                      range.key
                   ].data as Array<{ label: string, type: SourceType, value: string}>
 
-                  
+
 
                   // const component = findNestedComponent(entityParts[0], rootComponents)
                   // if (component) {
@@ -190,15 +201,15 @@ export const draftJsStuff = (
                   //     }
                   //   }
                   // }
-                  break
+                    break
+                }
               }
             }
-          }
-          currentText = `${currentText.slice(
-            0,
-            range.offset
-          )}${replacementText}${currentText.slice(range.offset + range.length)}`
-        })
+            currentText = `${currentText.slice(
+              0,
+              range.offset
+            )}${replacementText}${currentText.slice(range.offset + range.length)}`
+          })
         textParts.push(currentText)
       })
       return textParts.join('\n')
@@ -254,7 +265,7 @@ export function convertHooks(hooks: Hooks) {
         hookBuilder.push(`   const `)
         hookBuilder.push(buildUpHook(v))
         hookBuilder.push(` = ${key}(`)
-        
+
         var defaultValSetter = `'`;
         if (hooks[key].parameters !== null && hooks[key].parameters !== undefined) {
           defaultValSetter = ``;
@@ -410,9 +421,9 @@ query Me {
   me {
     _id
     ${authTable.fields
-      .filter(f => !f.connection && !f.isHashed)
-      .map(f => f.fieldName)
-      .join('\n')}
+        .filter(f => !f.connection && !f.isHashed)
+        .map(f => f.fieldName)
+        .join('\n')}
   }
 }
     `,
@@ -438,9 +449,9 @@ query Get${m.name}($_id: ID!) {
   get${m.name}(_id: $_id) {
     _id
     ${m.fields
-      .filter(f => !f.connection && !f.isHashed)
-      .map(f => f.fieldName)
-      .join('\n')}
+          .filter(f => !f.connection && !f.isHashed)
+          .map(f => f.fieldName)
+          .join('\n')}
   }
 }
       `,
@@ -455,14 +466,14 @@ query List${m.name}($filter: Model${
         }FilterInput, $sortDirection: ModelSortDirection, $limit: Int, $nextToken: String) {
   list${
     m.name
-  }(filter: $filter, sortDirection: $sortDirection, limit: $limit, nextToken: $nextToken) {
+        }(filter: $filter, sortDirection: $sortDirection, limit: $limit, nextToken: $nextToken) {
     nextToken
     items {
       _id
     ${m.fields
-      .filter(f => !f.connection && !f.isHashed)
-      .map(f => f.fieldName)
-      .join('\n')}
+          .filter(f => !f.connection && !f.isHashed)
+          .map(f => f.fieldName)
+          .join('\n')}
     }
   }
 }
@@ -479,9 +490,9 @@ mutation Create${m.name}($input: Create${m.name}Input!, $condition: Model${
   create${m.name}(input: $input, condition: $condition) {
     _id
     ${m.fields
-      .filter(f => !f.connection && !f.isHashed)
-      .map(f => f.fieldName)
-      .join('\n')}
+          .filter(f => !f.connection && !f.isHashed)
+          .map(f => f.fieldName)
+          .join('\n')}
   }
 }
       `,
@@ -496,9 +507,9 @@ mutation Delete${m.name}($input: Delete${m.name}Input!, $condition: Model${
   delete${m.name}(input: $input, condition: $condition) {
     _id
     ${m.fields
-      .filter(f => !f.connection && !f.isHashed)
-      .map(f => f.fieldName)
-      .join('\n')}
+          .filter(f => !f.connection && !f.isHashed)
+          .map(f => f.fieldName)
+          .join('\n')}
   }
 }
       `,
@@ -513,9 +524,9 @@ mutation Update${m.name}($input: Update${m.name}Input!, $condition: Model${
   update${m.name}(input: $input, condition: $condition) {
     _id
     ${m.fields
-      .filter(f => !f.connection && !f.isHashed)
-      .map(f => f.fieldName)
-      .join('\n')}
+          .filter(f => !f.connection && !f.isHashed)
+          .map(f => f.fieldName)
+          .join('\n')}
   }
 }
       `,
@@ -530,9 +541,9 @@ subscription On${m.name}Change($filter: Model${m.name}FilterInput) {
     _ids
     items {
       ${m.fields
-        .filter(f => !f.connection && !f.isHashed)
-        .map(f => f.fieldName)
-        .join('\n')}
+          .filter(f => !f.connection && !f.isHashed)
+          .map(f => f.fieldName)
+          .join('\n')}
     }
   }
 }
@@ -627,19 +638,19 @@ export function functionBuilder(
         value: 'login',
       })
       propsBuilder.push(
-        `const success = await login({ variables: { username: \`${draftJsStuff(
+        `const success = await login({ variables: { username: ${draftJsStuff(
           action.username,
           rootComponents,
           projectInfo,
           packages,
           assetFolder
-        )}\`, password: \`${draftJsStuff(
+        )}, password: ${draftJsStuff(
           action.password,
           rootComponents,
           projectInfo,
           packages,
           assetFolder
-        )}\`}});`
+        )}}});`
       )
       if (action.onSucess) {
         propsBuilder.push(`if (success.data) {`)
